@@ -37,12 +37,20 @@
         <h1 class="text-center">Welcome to Class Assassin</h1>
         <p class="text-center">Upload your player dataset, manage kills, and send target emails easily!</p>
 
+        <!-- Display the current dataset -->
         {% if uploaded_file %}
-        <div class="alert alert-info" role="alert">
+        <div class="alert alert-info text-center" role="alert">
             <strong>Current Dataset:</strong> {{ uploaded_file }}
+            <br>
+            <em>This is the most recent dataset in use.</em>
+        </div>
+        {% else %}
+        <div class="alert alert-warning text-center" role="alert">
+            <em>No dataset has been uploaded yet. Please upload a CSV to get started.</em>
         </div>
         {% endif %}
 
+        <!-- Form to upload a dataset -->
         <form action="/upload" method="post" enctype="multipart/form-data" class="mb-4">
             <div class="mb-3">
                 <label for="file" class="form-label">Upload Player Dataset (CSV):</label>
@@ -51,6 +59,8 @@
             <button type="submit" class="btn btn-primary w-100">Upload</button>
         </form>
         <hr>
+
+        <!-- Form to submit a kill -->
         <form action="/kill" method="post" class="mb-4">
             <div class="mb-3">
                 <label for="killer" class="form-label">Enter Killer's Name:</label>
@@ -59,6 +69,8 @@
             <button type="submit" class="btn btn-danger w-100">Submit Kill</button>
         </form>
         <hr>
+
+        <!-- Link to view player data -->
         <div class="text-center">
             <a href="/data" class="btn btn-secondary">View Current Player Data</a>
         </div>

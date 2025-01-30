@@ -12,35 +12,57 @@ UPLOAD_FOLDER = "uploaded_data"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure the folder exists
 CSV_FILE = os.path.join(UPLOAD_FOLDER, "player_data.csv")
 
-# Global variable to store player data
+# Global variables to store player data and filename
 data = None
+uploaded_file = None  # Global variable to track the uploaded file name
 
 EMAIL_SENDER = 'andover2025@gmail.com'  # Replace with your email
 EMAIL_PASSWORD = 'wtwz fdsj bxrl niyb'  # Replace with your app password
 
+
 @app.route('/')
 def index():
-    global data
-    uploaded_file = None
+    """
+    Displays the home page with options to upload a dataset, view player data, or process kills.
+    Shows the current dataset name if it exists.
+    """
+    global data, uploaded_file
     if os.path.exists(CSV_FILE):
-        uploaded_file = os.path.basename(CSV_FILE)
-        if data is None:
+        if data is None:  # Load the dataset if not already loaded
             data = pd.read_csv(CSV_FILE)
-    return render_template('index.html', data=data.to_html() if data is not None else None, uploaded_file=uploaded_file)
+        if not uploaded_file:  # Set uploaded_file if not already set
+            uploaded_file = os.path.basename(CSV_FILE)
+    return render_template(
+        'index.html',
+        data=data.to_html() if data is not None else None,
+        uploaded_file=uploaded_file
+    )
 
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    global data
+    """
+    Handles dataset uploads, saves the uploaded file, and updates the in-memory dataset.
+    """
+    global data, uploaded_file
     file = request.files['file']
     if file:
-        # Save the uploaded file
+        # Save the uploaded file and update the global filename variable
+        uploaded_file = file.filename
         file.save(CSV_FILE)
-        data = pd.read_csv(CSV_FILE)  # Load the data into memory
-    return render_template('upload_success.html', data=data.to_html())
+        data = pd.read_csv(CSV_FILE)  # Load the new data into memory
+    return render_template(
+        'upload_success.html',
+        data=data.to_html(),
+        uploaded_file=uploaded_file
+    )
+
 
 @app.route('/kill', methods=['POST'])
 def process_kill():
+    """
+    Handles kill submissions, updates the dataset, and notifies the killer of their next target.
+    """
     global data
     if data is None:
         return "No data available. Please upload a dataset first."
@@ -69,18 +91,28 @@ def process_kill():
     killer_email = data.loc[data['Names'] == killer, 'Emails'].values[0]
     send_email(killer, next_target['Names'], killer_email)
 
-    return render_template('kill_confirmation.html')
-
+    return render_template(
+        'kill_confirmation.html',
+        killer=killer,
+        next_target=next_target['Names']
+    )
 
 
 @app.route('/data')
 def view_data():
+    """
+    Displays the current dataset as an HTML table.
+    """
     global data
     if data is None:
         return "No data available. Please upload a dataset first."
     return render_template('data.html', data=data.to_html())
 
+
 def send_email(killer_name, target_name, recipient_email):
+    """
+    Sends an email to the killer with the name of their next target.
+    """
     subject = 'Your Next Assassin Target'
     body = f"Hi {killer_name},\n\nYour next target is {target_name}. Have fun and good luck!"
 
@@ -95,6 +127,6 @@ def send_email(killer_name, target_name, recipient_email):
         smtp.login(EMAIL_SENDER, EMAIL_PASSWORD)
         smtp.send_message(em)
 
+
 if __name__ == "__main__":
     app.run(debug=False)
-
