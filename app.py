@@ -127,6 +127,24 @@ def send_email(killer_name, target_name, recipient_email):
         smtp.login(EMAIL_SENDER, EMAIL_PASSWORD)
         smtp.send_message(em)
 
+@app.route('/send_initial_emails', methods=['POST'])
+def send_initial_emails():
+    global data
+
+    if data is None or data.empty:
+        return "No data available. Please upload a dataset first."
+
+    # Assign each player their target (next player in the list, circular)
+    for i in range(len(data)):
+        killer_name = data.iloc[i]['Names']
+        killer_email = data.iloc[i]['Emails']
+        target_name = data.iloc[(i + 1) % len(data)]['Names']  # Circular assignment
+
+        # Send email to each player with their target
+        send_email(killer_name, target_name, killer_email)
+
+    return render_template('emails_sent.html')  # Display success page
+
 
 if __name__ == "__main__":
     app.run(debug=False)
